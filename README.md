@@ -14,11 +14,22 @@ npm test                  # second terminal, server running
 | Requirement | Where |
 |---|---|
 | Backend with MongoDB | `server.js` (Express + Mongoose, `posts` collection) |
-| CRUD | Create `POST /api/posts`, Read `GET /api/posts`, Update `PUT /api/posts/:id` plus `$inc` likes and `$push` comments, Delete `DELETE /api/posts/:id` |
-| Queries and indexes | `createdAt` (feed), `username + createdAt` (compound), text index on `caption`. Feed query skips photo bytes with `.select('-image.data')`. Proof at `/api/demo/indexes` and `/api/demo/explain` (look for `IXSCAN`) |
+| CRUD & User Profiles | Create `POST /api/posts`, Read `GET /api/posts` (feed & user filter), Single `GET /api/posts/:id`, Update `PUT /api/posts/:id` plus `$inc` likes and `$push` comments, Delete `DELETE /api/posts/:id`, Distinct Creators `GET /api/users`, User Profile Aggregation `GET /api/users/:username` |
+| Queries and indexes | `createdAt` (home feed), `username + createdAt` (profile feed & stats), text index on `caption`. Feed query skips photo bytes with `.select('-image.data')`. Proof at `/api/demo/indexes` and `/api/demo/explain` (look for `IXSCAN`) |
 | Replication | Atlas clusters are 3-node replica sets. Show it live at `/api/demo/replication` (set name, primary, members). Locally: `mongod --replSet rs0`, then `rs.initiate()` |
 | Backup | `scripts/backup.sh` (`mongodump`), restore with `mongorestore`. Atlas Cloud Backup snapshots on paid tiers |
 | Deployment and testing | Render or Railway: build `npm install`, start `npm start`, env var `MONGODB_URI`. Vercel works via `vercel.json` but uploads are capped near 4.5 MB. Tests in `test/api.test.js` |
+
+## Deploy on Render (Blueprint)
+
+This repository includes a `render.yaml` Blueprint file for 1-click deployment on Render:
+
+1. Push your code to GitHub.
+2. In your [Render Dashboard](https://dashboard.render.com/), click **New +** → **Blueprint**.
+3. Connect your GitHub repository.
+4. Render will automatically detect `render.yaml` and prompt you to input the `MONGODB_URI` environment variable.
+5. Paste your MongoDB connection string from your `.env` file.
+6. Click **Apply**. Render will build and deploy the web service with health checks configured at `/api/health`.
 
 ## Live demo (GitHub Pages)
 
