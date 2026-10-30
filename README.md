@@ -20,6 +20,21 @@ npm test                  # second terminal, server running
 | Backup | `scripts/backup.sh` (`mongodump`), restore with `mongorestore`. Atlas Cloud Backup snapshots on paid tiers |
 | Deployment and testing | Render or Railway: build `npm install`, start `npm start`, env var `MONGODB_URI`. Vercel works via `vercel.json` but uploads are capped near 4.5 MB. Tests in `test/api.test.js` |
 
+## Live demo (GitHub Pages)
+
+The static frontend (`public/`) is deployed to GitHub Pages via GitHub Actions
+(`.github/workflows/deploy-pages.yml`) on every push to `main`.
+
+**One-time setup:** In the repo on GitHub, go to **Settings → Pages → Build and
+deployment → Source** and select **GitHub Actions**. After that, push to `main`
+and the site deploys automatically to
+`https://sunnydev07.github.io/frame-mongodb-demo/`.
+
+> ⚠️ GitHub Pages serves only static files, so the live demo shows the UI but
+> the API (`/api/posts`) needs a running backend. For a fully working live app,
+> host `server.js` + MongoDB (e.g. Render, Railway, or Vercel via `vercel.json`)
+> with `MONGODB_URI` set, then point the frontend's fetch calls at that backend.
+
 ## Atlas checklist
 1. Database Access: create a user. Network Access: allow your IP (or 0.0.0.0/0 for the demo).
 2. Put the connection string in `MONGODB_URI`, and add the same variable in your host's dashboard.
