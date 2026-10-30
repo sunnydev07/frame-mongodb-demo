@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frame</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#16130f;--panel:#1f1b16;--line:#332d25;--ink:#ece4d6;--mute:#a09584;--amber:#e0a458;--r:6px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:2}
+h1{font:700 28px Fraunces,Georgia,serif;margin:0;letter-spacing:-.5px}
+.who{display:flex;gap:8px;align-items:center;color:var(--mute)}
+input,textarea,button{font:inherit;color:var(--ink)}
+input,textarea{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;width:100%}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+button{background:none;border:1px solid var(--line);border-radius:var(--r);padding:7px 12px;cursor:pointer}
+button:hover{border-color:var(--amber)}
+button.primary{background:var(--amber);border-color:var(--amber);color:#1a1409;font-weight:500}
+.promo{position:relative;display:grid;grid-template-columns:repeat(3,1fr);height:150px;border-radius:var(--r);overflow:hidden;margin-bottom:24px;border:1px solid var(--line)}
+.promo img{width:100%;height:100%;object-fit:cover;filter:saturate(.8) brightness(.55)}
+.promo div{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:0 28px;background:linear-gradient(90deg,rgba(22,19,15,.85),rgba(22,19,15,0) 70%)}
+.promo strong{font:700 24px Fraunces,Georgia,serif}
+.promo span{color:var(--mute);font-size:14px}
+main{max-width:960px;margin:0 auto;padding:24px}
+#upload{display:grid;grid-template-columns:160px 1fr auto;gap:14px;align-items:stretch;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:28px}
+#drop{display:grid;place-items:center;border:1px dashed var(--mute);border-radius:var(--r);min-height:120px;cursor:pointer;color:var(--mute);text-align:center;overflow:hidden;font-size:13px}
+#drop img{width:100%;height:100%;object-fit:cover}
+#upload .fields{display:flex;flex-direction:column;gap:8px}
+#msg{min-height:22px;color:var(--amber);margin:-14px 0 14px}
+.search{margin-bottom:18px}
+#feed{columns:2 300px;column-gap:20px}
+.post{break-inside:avoid;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);margin:0 0 20px;overflow:hidden}
+.post img{display:block;width:100%}
+.body{padding:12px 14px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.user{font-weight:500}
+.time{color:var(--mute);font-size:12px}
+.cap{margin:6px 0 10px}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.acts button{padding:4px 10px;font-size:13px}
+.comments{margin:10px 0 0;padding:0;list-style:none;font-size:14px;color:var(--mute)}
+.comments b{color:var(--ink);font-weight:500}
+.cform{display:flex;gap:6px;margin-top:10px}
+.empty{color:var(--mute);text-align:center;padding:60px 0}
+@media(max-width:640px){#upload{grid-template-columns:1fr}header{flex-direction:column;align-items:flex-start}}
+@media(prefers-reduced-motion:no-preference){.post{animation:in .5s ease both}@keyframes in{from{opacity:0}to{opacity:1}}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Frame</h1>
+  <label class="who">Posting as <input id="username" placeholder="your name" maxlength="30" style="width:150px"></label>
+</header>
+<main>
+  <aside class="promo" aria-label="Frame beta announcement">
+    <img src="https://picsum.photos/seed/frame-a/400/300" alt="" onerror="this.remove()">
+    <img src="https://picsum.photos/seed/frame-b/400/300" alt="" onerror="this.remove()">
+    <img src="https://picsum.photos/seed/frame-c/400/300" alt="" onerror="this.remove()">
+    <div><strong>Frame is in beta</strong><span>Share your first photo below.</span></div>
+  </aside>
+  <form id="upload">
+    <label id="drop" for="photo"><span>Choose a photo<br>JPG, PNG, WEBP or GIF, up to 4 MB</span></label>
+    <input id="photo" type="file" accept="image/*" hidden>
+    <div class="fields"><textarea id="caption" rows="3" maxlength="300" placeholder="Write a caption"></textarea></div>
+    <button class="primary" type="submit">Share photo</button>
+  </form>
+  <div id="msg" role="status"></div>
+  <input class="search" id="q" placeholder="Search captions">
+  <section id="feed" aria-live="polite"></section>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const say = t => { $('#msg').textContent = t; if (t) setTimeout(() => $('#msg').textContent === t && ($('#msg').textContent = ''), 4000); };
+const api = async (url, opts) => {
+  const r = await fetch(url, opts); const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || 'Request failed'); return d;
+};
+const json = (method, body) => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+
+try { $('#username').value = localStorage.getItem('frame-user') || ''; } catch {}
+$('#username').addEventListener('input', e => { try { localStorage.setItem('frame-user', e.target.value); } catch {} });
+
+$('#photo').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  $('#drop').innerHTML = `<img alt="Preview" src="${URL.createObjectURL(f)}">`;
+});
+
+$('#upload').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = $('#photo').files[0], user = $('#username').value.trim();
+  if (!user) return say('Enter your name first');
+  if (!f) return say('Choose a photo to upload');
+  const fd = new FormData(); fd.append('photo', f); fd.append('username', user); fd.append('caption', $('#caption').value);
+  try {
+    await api('/api/posts', { method: 'POST', body: fd });
+    e.target.reset(); $('#drop').innerHTML = '<span>Choose a photo<br>JPG, PNG, WEBP or GIF, up to 4 MB</span>';
+    say('Photo shared'); load();
+  } catch (err) { say(err.message); }
+});
+
+async function load() {
+  const q = $('#q').value.trim();
+  try {
+    const posts = await api('/api/posts' + (q ? '?q=' + encodeURIComponent(q) : ''));
+    $('#feed').innerHTML = posts.length ? posts.map(card).join('') : '<p class="empty">No photos yet. Share the first one above.</p>';
+  } catch (err) { $('#feed').innerHTML = `<p class="empty">${esc(err.message)}</p>`; }
+}
+
+const card = p => `
+<article class="post" data-id="${p._id}">
+  <img loading="lazy" alt="Photo by ${esc(p.username)}" src="/api/posts/${p._id}/image">
+  <div class="body">
+    <div class="row"><span class="user">${esc(p.username)}</span><span class="time">${new Date(p.createdAt).toLocaleString()}</span></div>
+    <p class="cap">${esc(p.caption)}</p>
+    <div class="acts">
+      <button data-a="like">Like ${p.likes}</button>
+      <button data-a="edit">Edit caption</button>
+      <button data-a="del">Delete</button>
+    </div>
+    <ul class="comments">${p.comments.map(c => `<li><b>${esc(c.username)}</b> ${esc(c.text)}</li>`).join('')}</ul>
+    <div class="cform"><input placeholder="Add a comment" maxlength="200"><button data-a="comment">Post</button></div>
+  </div>
+</article>`;
+
+$('#feed').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-a]'); if (!b) return;
+  const post = b.closest('.post'), id = post.dataset.id;
+  try {
+    if (b.dataset.a === 'like') await api(`/api/posts/${id}/like`, { method: 'POST' });
+    if (b.dataset.a === 'del') { if (!confirm('Delete this photo?')) return; await api(`/api/posts/${id}`, { method: 'DELETE' }); }
+    if (b.dataset.a === 'edit') {
+      const c = prompt('New caption', post.querySelector('.cap').textContent); if (c === null) return;
+      await api(`/api/posts/${id}`, json('PUT', { caption: c }));
+    }
+    if (b.dataset.a === 'comment') {
+      const t = post.querySelector('.cform input').value.trim(); if (!t) return say('Write a comment first');
+      await api(`/api/posts/${id}/comments`, json('POST', { username: $('#username').value.trim() || 'guest', text: t }));
+    }
+    load();
+  } catch (err) { say(err.message); }
+});
+
+let t; $('#q').addEventListener('input', () => { clearTimeout(t); t = setTimeout(load, 300); });
+load();
+</script>
+</body>
+</html>
